@@ -5,90 +5,100 @@
 
 using namespace std;
 
-class Vertex {
+int DFSVisit(int id, int idParent, int idRoot, int* visitedCount, int* rootCount, vector<int> &_low, vector<int> &_d, vector<int> &_breakPoints, vector<bool> &_visited, vector<vector<int>> &_adjacent) {
     
-public:
-
-    int _id;
-
-    bool _visited;
-
-    vector<Vertex*> _adjacent;
-
-    Vertex(int id, bool visited = false): _id(id), _visited(visited) {}
-
-    void addAdjacent(Vertex* v1) {
-        _adjacent.push_back(v1);
-    }
-
-    void printAdjacent() {
-        for (Vertex* v: _adjacent) {
-            printf("Printing: %d\n", v->_id);
-        }
-    }
-};
-
-int DFSVisit(Vertex* v, vector<Vertex*> &parents) {
+    int ccId = id;
+    _visited[id - 1] = true;
     
-    int ccId = v->_id;
+    (*visitedCount)++;
+    _d[id-1] = *visitedCount;
+    _low[id-1] = *visitedCount;
 
-    for (Vertex* u: v->_adjacent) {
-        if (u->_visited == false) {
-            u->_visited = true;
-            int i = DFSVisit(u, parents);
+    if (idParent == idRoot)
+        (*rootCount)++;
+    
+    /*printf("before ");
+    for (int i : _low)
+        printf("%d - ", i);
+    printf("\n");
+    
+    printf("%d, %d, %d, %d\n", id, idParent, idRoot, *visitedCount);*/
+    
+    for (int u: _adjacent[id-1]) {
+        if (u == idParent)
+            continue;
+        else if (!_visited[u-1]) {
+            int i = DFSVisit(u, id, idRoot, visitedCount, rootCount, _low, _d, _breakPoints, _visited, _adjacent);
+            _low[id-1] = min(_low[id-1], _low[u-1]);
+            
+            if (_d[id-1] <= _low[u-1]) { _breakPoints.push_back(id); /*printf("cond %d\n", id);*/}
+
+            /*printf("after ");
+            for (int i : _low)
+                printf("%d - ", i);
+            printf("\n");*/
             if (ccId < i) { ccId = i; }
         }
+        else
+            _low[id-1] = min(_low[id-1], _d[u-1]);
     }    
     return ccId;
 }
 
-void executeDFS(vector<Vertex*> &vVector) {
+void executeDFS(int n, vector<bool> &_visited, vector<vector<int>> &_adjacent) {
 
     int nSubNetworks = 0;
+    int visitedCount = 0;
+    int rootCount;
     vector<int> ccIds;
+    vector<int> _d(_visited.size());
+    vector<int> _low(_visited.size());
+    vector<int> _breakPoints;
 
-    for (Vertex* v: vVector) {
-        v->_visited = false;
-    }
-    vector<Vertex*> parents(vVector.size());
-    for (Vertex* v: vVector) {
-        if (v->_visited == false) {
+    for (int i = 1; i <= n; i++) {
+        if (!_visited[i-1]) {
+            rootCount = 0;
             nSubNetworks++;
-            v->_visited = true;
-            ccIds.push_back(DFSVisit(v, parents));
+            ccIds.push_back(DFSVisit(i, -1, i, &visitedCount, &rootCount, _low, _d, _breakPoints, _visited, _adjacent));
+            if (rootCount > 1) {
+                /*printf("R %d\n", i + 1);*/
+                _breakPoints.push_back(i);
+            }
         }
     }
+
+    sort(ccIds.begin(), ccIds.end());
 
     printf("%d\n", nSubNetworks);
     for (int i: ccIds) {
         printf("%d ", i);
     }
-    
-    printf("\n");
+
+    /*
+    printf("\nBreakpoints: \n");
+
+    for (int i : _breakPoints) {
+        printf("%d\n", i);
+    }
+    printf("\n");*/
 }
 
 int main() {
 
-    int n, m, p1, p2, nm;
+    int n, m, p1, p2;
 
     if (scanf("%d", &n) != 1) {exit(0);};  //reads number of routers
     if (scanf("%d", &m) != 1) {exit(0);};  //reads number of connections
-    m > n ? nm = n - 1: nm = m;
-    vector<Vertex*> vVector(n); // O(n);
-    for (int i = 0; i < n; i++) {   // O(n);
-        vVector[i] = new Vertex(i+1);   
-    }
+    vector<bool> _visited(n, false);
+    vector<vector<int>> _adjacent(n);
 
     while (scanf("%d %d", &p1, &p2) == 2) {
         p1--; p2--;
-        vVector[p1]->addAdjacent(vVector[p2]);
-        vVector[p2]->addAdjacent(vVector[p1]);
+        _adjacent[p1].push_back(p2 + 1);
+        _adjacent[p2].push_back(p1 + 1);
     }
     
-    executeDFS(vVector);
+    executeDFS(n, _visited, _adjacent);
 
-    for (Vertex* v: vVector) {
-        delete v;
-    }
     return 0;
 }
