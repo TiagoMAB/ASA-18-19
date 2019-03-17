@@ -12,10 +12,9 @@ public:
     int _m, _n;
     vector<int> _low;
     list<int> *_adjacent;
-    vector<bool> _end;
 
 
-    Graph(int n, int m): _m(m), _n(n), _low(n, 0), _end(n, false) { 
+    Graph(int n, int m): _m(m), _n(n), _low(n, 0) { 
         _adjacent = new list<int>[n]; 
     }
 
@@ -52,8 +51,7 @@ int DFSVisit(list<int> &adjacent, Graph* g, int oldId, int* dCount) {
             int i = DFSVisit(g->_adjacent[id-1], g, id, dCount);
             if (ccId < i) { ccId = i; }
         }
-    }
-    g->_end[id-1] = true;   
+    }   
     for (int id: adjacent) {
         if ((g->_low[id-1] < g->_low[oldId-1]) && (id != oldId) && (g->_adjacent[id-1].size() != 1))  {
             printf("Antes: Id: %d | Low: %d | OldId: %d\n", id, g->_low[id-1], g->_low[oldId-1]);
