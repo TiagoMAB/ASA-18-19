@@ -9,34 +9,28 @@ class Vertex {
     
 public:
 
-    int _id;
-
     bool _visited;
 
-    vector<Vertex*> _adjacent;
+    list<int> _adjacent;
 
-    Vertex(int id, bool visited = false): _id(id), _visited(visited) {}
+    Vertex(bool visited = false): _visited(visited) {}
 
-    void addAdjacent(Vertex* v1) {
-        _adjacent.push_back(v1);
-    }
-
-    void printAdjacent() {
-        for (Vertex* v: _adjacent) {
-            printf("Printing: %d\n", v->_id);
-        }
+    void addAdjacent(int id) {
+        _adjacent.push_back(id);
     }
 };
 
-int DFSVisit(Vertex* v, vector<Vertex*> &parents) {
+int DFSVisit(int id, vector<Vertex*> &parents, vector<Vertex*> &vVector) {
     
-    int ccId = v->_id;
+    int ccId = id;
+    Vertex* v = vVector[id-1];
 
-    for (Vertex* u: v->_adjacent) {
+    for (int i: v->_adjacent) {
+        Vertex* u = vVector[i-1]; 
         if (u->_visited == false) {
             u->_visited = true;
-            int i = DFSVisit(u, parents);
-            if (ccId < i) { ccId = i; }
+            int d = DFSVisit(i, parents, vVector);
+            if (ccId < d) { ccId = d; }
         }
     }    
     return ccId;
@@ -45,20 +39,22 @@ int DFSVisit(Vertex* v, vector<Vertex*> &parents) {
 void executeDFS(vector<Vertex*> &vVector) {
 
     int nSubNetworks = 0;
-    vector<int> ccIds;
+    list<int> ccIds;
 
     for (Vertex* v: vVector) {
         v->_visited = false;
     }
     vector<Vertex*> parents(vVector.size());
-    for (Vertex* v: vVector) {
+    for (int id = 1; id <= vVector.size(); id++) {
+        Vertex* v = vVector[id-1];
         if (v->_visited == false) {
             nSubNetworks++;
             v->_visited = true;
-            ccIds.push_back(DFSVisit(v, parents));
+            ccIds.push_back(DFSVisit(id, parents, vVector));
         }
     }
 
+    ccIds.sort();
     printf("%d\n", nSubNetworks);
     for (int i: ccIds) {
         printf("%d ", i);
@@ -69,20 +65,19 @@ void executeDFS(vector<Vertex*> &vVector) {
 
 int main() {
 
-    int n, m, p1, p2, nm;
+    int n, m, p1, p2;
 
     if (scanf("%d", &n) != 1) {exit(0);};  //reads number of routers
-    if (scanf("%d", &m) != 1) {exit(0);};  //reads number of connections
-    m > n ? nm = n - 1: nm = m;
     vector<Vertex*> vVector(n); // O(n);
     for (int i = 0; i < n; i++) {   // O(n);
-        vVector[i] = new Vertex(i+1);   
+        vVector[i] = new Vertex();   
     }
 
+    if (scanf("%d", &m) != 1) {exit(0);};  //reads number of connections
+
     while (scanf("%d %d", &p1, &p2) == 2) {
-        p1--; p2--;
-        vVector[p1]->addAdjacent(vVector[p2]);
-        vVector[p2]->addAdjacent(vVector[p1]);
+        vVector[p1-1]->addAdjacent(p2);
+        vVector[p2-1]->addAdjacent(p1);
     }
     
     executeDFS(vVector);
