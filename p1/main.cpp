@@ -1,6 +1,7 @@
 #include <iostream>
 #include <list>     //to decide which one is better
 #include <vector>   //to decide which one is better
+#include <algorithm> 
 
 using namespace std;
 
@@ -12,7 +13,7 @@ public:
 
     bool _visited;
 
-    list<Vertex*> _adjacent;
+    vector<Vertex*> _adjacent;
 
     Vertex(int id, bool visited = false): _id(id), _visited(visited) {}
 
@@ -27,56 +28,63 @@ public:
     }
 };
 
-void DFSVisit(Vertex* v) {
+int DFSVisit(Vertex* v, vector<Vertex*> &parents) {
     
+    int ccId = v->_id;
+
     for (Vertex* u: v->_adjacent) {
         if (u->_visited == false) {
             u->_visited = true;
-            DFSVisit(u);
+            int i = DFSVisit(u, parents);
+            if (ccId < i) { ccId = i; }
         }
     }    
+    return ccId;
 }
 
-int executeDFS(vector<Vertex*> vVector) {
+void executeDFS(vector<Vertex*> &vVector) {
 
-    int n = 0;
+    int nSubNetworks = 0;
+    vector<int> ccIds;
 
     for (Vertex* v: vVector) {
         v->_visited = false;
     }
-
+    vector<Vertex*> parents(vVector.size());
     for (Vertex* v: vVector) {
         if (v->_visited == false) {
-            n++;
+            nSubNetworks++;
             v->_visited = true;
-            DFSVisit(v);
+            ccIds.push_back(DFSVisit(v, parents));
         }
     }
 
-    return n;
+    printf("%d\n", nSubNetworks);
+    for (int i: ccIds) {
+        printf("%d ", i);
+    }
+    
+    printf("\n");
 }
 
 int main() {
 
     int n, m, p1, p2;
-    Vertex *v1, *v2;
 
-    scanf("%d", &n);  //reads number of routers
+    if (scanf("%d", &n) != 1) {exit(0);};  //reads number of routers
+    if (scanf("%d", &m) != 1) {exit(0);};  //reads number of connections
     vector<Vertex*> vVector(n); // O(n);
     for (int i = 0; i < n; i++) {   // O(n);
         vVector[i] = new Vertex(i+1);   
     }
 
-    scanf("%d", &m);  //reads number of connections
     while (scanf("%d %d", &p1, &p2) == 2) {
         p1--; p2--;
         vVector[p1]->addAdjacent(vVector[p2]);
         vVector[p2]->addAdjacent(vVector[p1]);
     }
     
-    int nSubNetworks = executeDFS(vVector);
-
-    printf("Component: %d\n", nSubNetworks);
+    executeDFS(vVector);
 
     for (Vertex* v: vVector) {
         delete v;
